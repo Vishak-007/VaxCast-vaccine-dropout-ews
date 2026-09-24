@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DoseWatch -- Pentavalent Dropout Early-Warning</title>
+<meta name="description" content="District-level pentavalent (Penta1 to Penta3) vaccine dropout early-warning system for India, built on HMIS 2017-2020 dose counts." />
+<link rel="stylesheet" href="fonts/fonts.css" />
+<link rel="stylesheet" href="styles.css" />
+<script src="vendor/motion.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#ledger">Skip to district ledger</a>
+
+<header class="masthead" id="top">
+  <div class="wrap masthead__inner">
+    <div class="masthead__brand">
+      <div class="wordmark">
+        <span class="wordmark__mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="32" height="32">
+            <rect x="1" y="1" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M7 22 L13 22 L13 12 L19 12 L19 18 L25 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="25" cy="18" r="2.2" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="wordmark__text">DoseWatch</span>
+      </div>
+      <p class="masthead__tag">Pentavalent Dropout Early-Warning · India</p>
+    </div>
+    <div class="masthead__meta">
+      <span class="masthead__source" id="provenance">Loading source…</span>
+      <nav class="masthead__nav" aria-label="Sections">
+        <a href="#overview">Overview</a>
+        <a href="#ledger">Ledger</a>
+        <a href="#method">Method</a>
+      </nav>
+    </div>
+  </div>
+  <div class="masthead__counters wrap" id="counters" aria-live="polite">
+    <div class="counter" data-k="districts">
+      <span class="counter__num">—</span>
+      <span class="counter__label">Districts monitored</span>
+    </div>
+    <div class="counter counter--alert" data-k="high">
+      <span class="counter__num">—</span>
+      <span class="counter__label">High-risk districts</span>
+    </div>
+    <div class="counter" data-k="dropout">
+      <span class="counter__num">—</span>
+      <span class="counter__label">National dropout rate</span>
+    </div>
+    <div class="counter" data-k="missed">
+      <span class="counter__num">—</span>
+      <span class="counter__label">Children who started but did not finish the course <span class="counter__sub">latest reported year</span></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ─────────────  NATIONAL OVERVIEW  ───────────── -->
+  <section class="section" id="overview" aria-labelledby="overview-h">
+    <div class="section__head">
+      <h2 class="section__title" id="overview-h">National picture</h2>
+      <p class="section__note">Dropout ratio = share of infants who received pentavalent dose 1 but not dose 3, aggregated over the latest reported year.</p>
+    </div>
+
+    <div class="overview-grid">
+      <figure class="panel panel--hist">
+        <figcaption class="panel__cap">
+          <span>Distribution of district dropout rates</span>
+          <span class="panel__cap-sub">Each bar counts districts in a half-point dropout band, 0–16%. The dashed line is the high-risk threshold; bar height uses a square-root scale so the long tail stays legible.</span>
+        </figcaption>
+        <div class="hist" id="hist" role="img" aria-label="Histogram of district dropout rates"></div>
+        <div class="hist__axis" id="hist-axis"></div>
+        <ul class="bandlist bandlist--inline" id="bandlist">
+          <li class="bandlist__row" data-band="high"><span class="dot"></span><span class="bandlist__name">High risk</span><span class="bandlist__val">—</span><span class="bandlist__meta" id="bl-high">—</span></li>
+          <li class="bandlist__row" data-band="watch"><span class="dot"></span><span class="bandlist__name">Watch</span><span class="bandlist__val">—</span><span class="bandlist__meta" id="bl-watch">—</span></li>
+          <li class="bandlist__row" data-band="ontrack"><span class="dot"></span><span class="bandlist__name">On track</span><span class="bandlist__val">—</span><span class="bandlist__meta" id="bl-ontrack">—</span></li>
+        </ul>
+      </figure>
+
+      <figure class="panel panel--states">
+        <figcaption class="panel__cap">
+          <span>Worst states &amp; UTs by dropout rate</span>
+          <span class="panel__cap-sub">Cohort-weighted over the latest year. Select a state to filter the ledger below.</span>
+        </figcaption>
+        <ol class="statebars" id="statebars"></ol>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ─────────────  THE LEDGER  ───────────── -->
+  <section class="section" id="ledger" aria-labelledby="ledger-h">
+    <div class="section__head section__head--ledger">
+      <div>
+        <h2 class="section__title" id="ledger-h">The district ledger</h2>
+        <p class="section__note" id="ledger-count">—</p>
+      </div>
+      <div class="ledger-actions">
+        <button class="btn btn--ghost" id="export-btn" type="button">Export view (CSV)</button>
+        <button class="btn btn--ghost" id="watch-toggle" type="button" aria-pressed="false">Watchlist <span id="watch-n" class="btn__badge" hidden>0</span></button>
+      </div>
+    </div>
+
+    <div class="controls" role="search">
+      <div class="field field--search">
+        <label for="q" class="field__label">Search</label>
+        <input id="q" type="search" placeholder="District or state…  ( / )" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="field">
+        <label for="state-filter" class="field__label">State</label>
+        <select id="state-filter"><option value="">All states</option></select>
+      </div>
+      <div class="field">
+        <label class="field__label" id="band-filter-label">Risk band</label>
+        <div class="segmented" role="group" aria-labelledby="band-filter-label" id="band-filter">
+          <button type="button" data-v="" aria-pressed="true">All</button>
+          <button type="button" data-v="high" aria-pressed="false">High</button>
+          <button type="button" data-v="watch" aria-pressed="false">Watch</button>
+          <button type="button" data-v="ontrack" aria-pressed="false">On track</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="min-cohort" class="field__label">Min. cohort <span id="min-cohort-val">0</span></label>
+        <input id="min-cohort" type="range" min="0" max="50000" step="1000" value="0" />
+      </div>
+      <button class="btn btn--text" id="clear-filters" type="button" hidden>Clear</button>
+    </div>
+
+    <div class="ledger" id="ledger-region" aria-live="polite">
+      <div class="ledger__head" role="row">
+        <button class="th th--rank" data-sort="rank" role="columnheader">Rank</button>
+        <span class="th th--star" role="columnheader" aria-label="Watchlist"></span>
+        <button class="th th--name" data-sort="district" role="columnheader">District</button>
+        <button class="th th--state" data-sort="state" role="columnheader">State</button>
+        <button class="th th--num" data-sort="penta1" role="columnheader">Dose-1 cohort</button>
+        <button class="th th--drop" data-sort="dropout" role="columnheader" aria-sort="descending">Dropout rate</button>
+        <button class="th th--trend" data-sort="trend" role="columnheader">3-yr</button>
+        <span class="th th--chev" role="columnheader"></span>
+      </div>
+      <div class="ledger__body" id="rows"></div>
+      <div class="ledger__empty" id="ledger-empty" hidden>
+        <p class="ledger__empty-title">No districts match these filters</p>
+        <p class="ledger__empty-sub">Widen the cohort range or clear the risk-band filter.</p>
+        <button class="btn btn--ghost" data-clear type="button">Clear all filters</button>
+      </div>
+      <div class="ledger__skeleton" id="ledger-skeleton"></div>
+    </div>
+  </section>
+
+  <!-- ─────────────  METHOD  ───────────── -->
+  <section class="section section--method" id="method" aria-labelledby="method-h">
+    <div class="section__head">
+      <h2 class="section__title" id="method-h">Method &amp; caveats</h2>
+    </div>
+    <div class="method-grid">
+      <article>
+        <h3>What is measured</h3>
+        <p>For each district we sum pentavalent dose-1 (<code>9.1.6</code>) and dose-3 (<code>9.1.8</code>) totals from the HMIS monthly service returns. The <strong>dropout ratio</strong> is <code>(dose1 − dose3) / dose1</code>, clipped to 0–100%. A district is flagged <strong>high risk</strong> when its ratio sits at or above the 80th percentile of all monitored districts, and <strong>watch</strong> above the 55th.</p>
+      </article>
+      <article>
+        <h3>Why a district is flagged</h3>
+        <p>Each district card lists the signals that push its risk up, ranked by contribution: whether the loss is concentrated at the 2nd or 3rd dose, how rural the catchment is, month-to-month volatility, a seasonal collapse in sessions, and the multi-year direction of travel. These are computed from the same HMIS returns — not a black box.</p>
+      </article>
+      <article>
+        <h3>Known limits</h3>
+        <p>HMIS records doses <em>delivered and reported</em>, not a true birth cohort, so denominators drift with reporting quality. Districts with fewer than 100 recorded dose-1 events in the latest year are excluded. Boundary changes between 2017 and 2020 mean a few districts lack a full three-year trend.</p>
+      </article>
+      <article>
+        <h3>Using this</h3>
+        <p>The ledger is a triage aid: it points state and district teams — and partner NGOs — toward the catchments where a fixed amount of outreach capacity will recover the most children. Pair it with local knowledge before acting.</p>
+      </article>
+    </div>
+    <p class="method-source" id="method-source">—</p>
+  </section>
+</main>
+
+<footer class="foot wrap">
+  <span>DoseWatch · Vaccine Dropout Early-Warning System</span>
+  <span>Source: NHM HMIS monthly immunisation returns, 2017–18 to 2019–20</span>
+</footer>
+
+<!-- ─────────────  DISTRICT PANEL  ───────────── -->
+<div class="panel-scrim" id="scrim" hidden></div>
+<aside class="dpanel" id="dpanel" hidden role="dialog" aria-modal="true" aria-labelledby="dp-name" tabindex="-1">
+  <div class="dpanel__inner" id="dpanel-inner"></div>
+</aside>
+
+<template id="tpl-row">
+  <a class="row" role="row" href="#">
+    <span class="row__rank"></span>
+    <button class="row__star" type="button" aria-label="Add to watchlist" aria-pressed="false">
+      <svg viewBox="0 0 16 16" width="15" height="15"><path d="M8 1.6l1.8 3.9 4.2.5-3.1 2.9.8 4.2L8 11.9 4.3 13.9l.8-4.2L2 6.9l4.2-.5z"/></svg>
+    </button>
+    <span class="row__name"></span>
+    <span class="row__state"></span>
+    <span class="row__num"></span>
+    <span class="row__drop">
+      <span class="row__drop-val"></span>
+      <span class="row__funnel"></span>
+    </span>
+    <span class="row__trend"></span>
+    <span class="row__chev" aria-hidden="true">→</span>
+  </a>
+</template>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
